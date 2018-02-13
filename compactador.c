@@ -10,11 +10,11 @@ void min_heapfy(no v[129], int n, int i){
 	int j = i;
 	while(2*j <= n){
 		int f = 2*j;
-		if (f<=n && v[f].qtd<v[f+1].qtd){
+		if (f<n-1 && v[f].qtd>v[f+1].qtd){
 			f = f+1;
 		}
-		printf("%d, %d?\n", f,j);
-		if (v[j].qtd>=v[f].qtd){
+		printf("%d <= %d?\n", v[f].qtd,v[j].qtd);
+		if (v[j].qtd<=v[f].qtd){
 			j=n;
 		}else{
 			no aux;
@@ -26,6 +26,40 @@ void min_heapfy(no v[129], int n, int i){
 	}
 	return;
 }
+
+void heapsort(no v[129], int n) {
+   int i = n / 2, pai, filho;
+   no t;
+   while(1) {
+      if (i > 1) {
+          i--;
+          t = v[i];
+      } else {
+          n--;
+          if (n == 1) return;
+          t = v[n];
+          v[n] = v[1];
+      }
+      pai = i;
+      filho = i * 2;
+      while (filho < n) {
+          if ((filho + 1 < n)  &&  (v[filho + 1].qtd > v[filho].qtd))
+              filho++;
+          if (v[filho].qtd > t.qtd) {
+             v[pai] = v[filho];
+             pai = filho;
+             filho = pai * 2;
+          } else {
+             break;
+          }
+      }
+      v[pai] = t;
+   }
+}
+
+
+
+
 
 
 
@@ -43,10 +77,12 @@ int main(){
 		v[a+1].qtd++;
 	}
 	
-	for (int i = 129/2; i > 1; --i)
+	for (int i = 129/2; i > 0; --i)
 	{
 		min_heapfy(v,129,i);
 	}
+
+	heapsort(v,129);
 
 	for (int i = 1; i < 129; ++i)
 	{
