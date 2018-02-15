@@ -1,19 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-
 #include "heap.h"
-struct heap {
-	char type;
-	int qtd;
-};
-
-struct no
-{
-	int qtd;
-	HEAP *esq;
-	HEAP *dir;
-};
+#include "trie.h"
 
 void help() {
 	printf("Comandos:\n");
@@ -23,40 +11,56 @@ void help() {
 	printf("Q - Encerra o programa.\n\n");
 }
 
-void compacta(HEAP *v, FILE *arq) {
-	HEAP *semzero;
+HEAP* lerArquivo(HEAP *v, FILE *arq, int *j) {
+	int i=1;
 	char c;
-	c = fgetc(arq);
-	while(c!=EOF){
-		v[c+1].qtd++;
-		c = fgetc(arq);
+	HEAP *a;
+	
+	while((c = fgetc(arq))!=EOF) v = setQtd(v, c+1, getQtd(v, c+1) + 1);
+
+	heapsort(v,257);
+
+	while(getQtd(v, i)) i++;
+
+	a = cria_heap();
+
+	for (int p=1; p<i; p++, (*j)++) insere(a, NULL, getType(v, p), getQtd(v, p));
+
+	return a;
+}
+
+void codifica(FILE *arq, int s[256], char *name) {
+	char c;
+	FILE *cpt;
+	cpt = fopen("text.bin", "wb");
+	if (cpt) {
+		while((c = fgetc(arq))!=EOF) {
+			fprintf(cpt, "%d", 1);
+		}
+	}
+	
+}
+
+void compacta(HEAP *v, FILE *arq, FILE *arq2, char *name) {
+	int j=0;
+	char c;
+	HEAP *t = lerArquivo(v, arq, &j);
+	
+	TRIE *k;
+	
+	while(j-- - 1){
+		TRIE *a, *b, *new;
+		a = remove_max(t);
+		b = remove_max(t);
+
+		k = cria_trie('0', getQtdOfTrie(a)+getQtdOfTrie(b), a, b);
+		insere(t, k, '0', getQtdOfTrie(k));
 	}
 
-
-	heapsort(v,128);
-	int i = 0;
-	while(!v[i].qtd)i++;
-	semzero = cria_heap(129-i);
-	int j = 0;
-	for (i; i < 129; ++i)
-	{
-		semzero[j++] = v[i];
-	}
-	no C;
-	while(j>1){
-		HEAP a,b,novo;
-		a = remove_max(semzero,j--);
-		b = remove_max(semzero,j--);
-		C.qtd = a.qtd + b.qtd;
-		C.esq = &a;
-		C.dir = &b;
-		novo.qtd = C.qtd;
-		insere_no(semzero,j++,novo);
-		// printf("%d\n",C.dir->qtd);
-		// printf("%d\n",C.esq->qtd);
-	}
-
-	return ;
+	int s[256] = {0};
+	code(k, s, 0);
+	codifica(arq2, s, name);
+	return;
 }
 
 void descompacta() {
@@ -71,8 +75,9 @@ int main() {
 	int i;
 	char act;
 	
-	FILE *arq;
+	FILE *arq, *arq2;
 	HEAP *v;
+	
 	printf("Compactei v1.0 \n\n");
 	
 	help();
@@ -81,15 +86,26 @@ int main() {
 		if (act == 'Q') break;
 		switch (act) {
 			case 'C': {
-				char url[3000000];
+				char url[280000], nam;
 
-				scanf("%s", url);
-				arq = fopen(url, "r");
+				scanf(" %s", url);
+
+				arq = fopen(url, "rb");
+				arq2 = fopen(url, "rb");
+
 				if (!arq) {
 					printf("Erro ao acessar arquivo.\n");
 				} else {
-					v = cria_heap(129);
-					compacta(v, arq);
+					int i = 0;
+					while(url[i++] != '.');
+					url[i++] = 'b';
+					url[i++] = 'i';
+					url[i++] = 'n';
+
+					v = cria_heap();
+					for (i=1; i<257; i++) v = insere(v, NULL, i-1, 0);
+
+					compacta(v, arq, arq2, url);
 				}
 				
 
