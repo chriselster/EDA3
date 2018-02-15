@@ -6,11 +6,18 @@ struct heap {
 	int qtd;
 };
 
+struct no
+{
+	int qtd;
+	HEAP *esq;
+	HEAP *dir;
+};
+
 HEAP* cria_heap(int tam) {
 	HEAP *v = malloc(sizeof(HEAP)*tam);
 
-	for (int i=0; i<tam; i++) {
-		v[i].type = i;
+	for (int i=1; i<tam+1; i++) {
+		v[i].type = i-1;
 		v[i].qtd = 0;
 	}
 
@@ -40,6 +47,32 @@ void corrige_descendo(HEAP *v, int n, int i) {
 			j = f;
 		}
 	}
+}
+
+void corrige_subindo(HEAP *v, int n) {
+	int i = n;
+
+	while (i>=2 && v[i/2].qtd >v[i].qtd ) {
+		HEAP temp = v[i];
+		v[i] = v[i/2];
+		v[i/2] = temp;
+		i = i/2;
+		
+	}
+}
+
+HEAP remove_max(HEAP*v,int n){
+	HEAP max = v[1];
+	v[1]=v[n];
+	n=n-1;
+	corrige_descendo(v,n,1);
+	return max;
+}
+
+
+HEAP* insere_no(HEAP*v, int n, HEAP c){
+	v[n+1]=c;
+	corrige_subindo(v,n+1);
 }
 
 void heapsort(HEAP *v, int n) {
