@@ -31,16 +31,11 @@ char getTypeOfTrie(TRIE *k) {
 	return k->n.type;
 }
 
-void code(TRIE *k, char str[256][256], char s[256], int len) {
-	if (k == NULL) return;
-	
-	if (k->esq == NULL && k->dir == NULL) {
-		for (int i=0; i<len; i++) str[k->n.type][i] = s[i];
-		return;
-	}
-
-	s[len] = '0';
-	code(k->esq, str, s, len+1);
-	s[len] = '1';
-	code(k->dir, str, s, len+1);
+TRIE* getEsqOfTrie(TRIE *k) {
+	return k->esq;
 }
+
+TRIE* getDirOfTrie(TRIE *k) {
+	return k->dir;
+}
+
