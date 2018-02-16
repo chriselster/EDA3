@@ -3,6 +3,19 @@
 #include "heap.h"
 #include "trie.h"
 
+typedef struct tempChar {
+    char val;
+    int pos;
+} tempChar;
+
+void writeVal(tempChar *var, int bit) {
+    var->pos++;
+    if (bit == 1) {
+        var->val += (128 >> var->pos);
+    }
+}
+
+
 void help() {
 	printf("Comandos:\n");
 	printf("C NOMEDOARQUIVO.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
@@ -29,16 +42,38 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j) {
 	return a;
 }
 
-void codifica(FILE *arq, int s[256], char *name) {
+void codifica(FILE *arq, char s[256][256], char *name) {
 	char c;
 	FILE *cpt;
 	cpt = fopen("text.bin", "wb");
-	if (cpt) {
-		while((c = fgetc(arq))!=EOF) {
-			fprintf(cpt, "%d", 1);
-		}
-	}
 	
+	if (cpt) {
+		tempChar* var = malloc(sizeof(tempChar));
+	    var->val = 0;
+	    var->pos = -1;
+	    
+		while((c = fgetc(arq)) != EOF) {
+			int i = 0;
+			
+			while(s[c][i] != '\0') {
+				if (var->pos < 7)
+					writeVal(var, s[c][i] - '0');
+				else {
+					fputc(var->val, cpt);
+					var->val = 0;
+	    			var->pos = -1;
+					
+					writeVal(var, s[c][i] - '0');
+				}
+				i++;
+			}
+		}
+		
+		fputc(var->val, cpt);
+	}
+	cpt = fopen("text.bin", "rb");
+	c = fgetc(cpt);
+	printf("C:%hu\n", c);
 }
 
 void compacta(HEAP *v, FILE *arq, FILE *arq2, char *name) {
@@ -57,9 +92,9 @@ void compacta(HEAP *v, FILE *arq, FILE *arq2, char *name) {
 		insere(t, k, '0', getQtdOfTrie(k));
 	}
 
-	int s[256] = {0};
-	code(k, s, 0);
-	codifica(arq2, s, name);
+	char str[256][256], s[256];
+	code(k, str, s, 0);
+	codifica(arq2, str, name);
 	return;
 }
 
