@@ -7,7 +7,7 @@
 void help() {
 	printf("Comandos:\n");
 	printf("C NOMEDOARQUIVO.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
-	printf("D NOMEDOARQUIVO.cpt - Descompacta o arquivo NOMEDOARQUIVO.cpt.\n");
+	printf("D NOMEDOARQUIVO.cpt NOVONOME.ext - Descompacta o arquivo NOMEDOARQUIVO.cpt para o NOVONOME.ext.\n");
 	printf("H - Exibe os comandos disponíveis.\n");
 	printf("Q - Encerra o programa.\n\n");
 }
@@ -107,12 +107,15 @@ TRIE* newTrie(HEAP *t, int j) {
 	TRIE *a, *b, *k;
 	if (j == 1) {
 		a = remove_max(t);
-		k = cria_trie('0', getQtdOfTrie(a), a, NULL);
+		k = cria_trie('0', getQtdOfTrie(a));
+		adcEsq(k, a);
 	} else while(j-- - 1){
 		a = remove_max(t);
 		b = remove_max(t);
 
-		k = cria_trie('0', getQtdOfTrie(a)+getQtdOfTrie(b), a, b);
+		k = cria_trie('0', getQtdOfTrie(a)+getQtdOfTrie(b));
+		adcEsq(k, a);
+		adcDir(k, b);
 		insere(t, k, '0', getQtdOfTrie(k));
 	}
 
@@ -126,7 +129,7 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	HEAP *t = lerArquivo(v, arq, &j, &cont);
 
 	if (j == 0) {
-		printf("Arquivo vazio.\n");
+		printf("Erro - Arquivo vazio.\n");
 		return;
 	}
 	
@@ -161,13 +164,67 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	}
 
 	codeTable(arq, cpt, str, name);
+
+	if (!ferror(cpt)) {
+		printf("\nArquivo compactado com sucesso!\nPara descompactar o arquivo, digite D %s.\n\n", name);
+	} else {
+		printf("\nErro ao compactar.\n");
+		exit(1);
+	}
+
 	fclose(cpt);
 	
 	return;
 }
 
-void descompacta() {
+int getBit(char* val, int* pos) {
+	int k = (*val & 64) >> 7;
+	*val = *val << 1;
+	(*pos)++;
+	return k;
+}
 
+void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie, char* name) {
+	char c;
+	
+	if (arq) {
+		char val = 0;
+    	int pos = -1;
+	    long long qntCh = 0;
+	    
+	    TRIE* aux = trie;
+	    
+		while((c = fgetc(arq)) != EOF) {
+			while(pos < 7 && qntCh < totalCh) {
+				val = c;
+				int i = getBit(&val, &pos);
+				
+				if (i == 1) aux = getDirOfTrie(aux);
+				else aux = getEsqOfTrie(aux);
+
+				if (getEsqOfTrie(aux) == NULL && getDirOfTrie(aux) == NULL)  {
+					char t = getTypeOfTrie(aux);
+					fputc(t, dcpt);
+					aux = trie;
+				}
+			}
+		}
+	}
+	
+}
+
+int tamStr(FILE *arq) {
+	int aux = 0;
+	unsigned char tam[4];
+
+	fread(tam, 4, 1, arq);
+
+	for (int i=0; i<4; i++) aux = aux | (tam[i] << (8*(3-i)));
+	return aux;
+}
+
+void descompacta(FILE *arq, FILE *dcpt) {
+	
 }
 
 void organiza(HEAP *v) {
@@ -177,8 +234,6 @@ void organiza(HEAP *v) {
 int main() {
 	int i;
 	char act;
-	
-	
 	
 	printf("Compactei v1.0 \n\n");
 	
@@ -211,6 +266,18 @@ int main() {
 			}
 
 			case 'D': {
+				char url[280000], name[280000];
+				scanf(" %s %s", url, name);
+
+				FILE *arq = fopen(url, "r+b");
+				FILE *dcpt = fopen(name, "w+b");
+
+				if (!arq) {
+					printf("Erro ao acessar arquivo.\n");
+				} else {
+					descompacta(arq, dcpt);
+				}
+
 				break;
 			}
 

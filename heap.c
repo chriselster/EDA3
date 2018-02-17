@@ -101,7 +101,7 @@ TRIE* remove_max(HEAP *v){
 	v->n[1]=v->n[v->tam--];
 	corrige_descendo(v,v->tam,1);
 	TRIE *t;
-	if (max.t == NULL) t = cria_trie(max.type, max.qtd, NULL, NULL);
+	if (max.t == NULL) t = cria_trie(max.type, max.qtd);
 	else t = max.t;
 	return t;
 }

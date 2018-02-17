@@ -12,15 +12,22 @@ struct trie {
 	TRIE *esq, *dir; 
 };
 
-TRIE* cria_trie(int type, int qtd, TRIE *esq, TRIE *dir) {
+TRIE* cria_trie(char type, int qtd) {
 	TRIE *v = malloc(sizeof(TRIE));
 
 	v->n.type = type;
 	v->n.qtd = qtd;
-	v->esq = esq;
-	v->dir = dir;
+	v->esq = v->dir = NULL;
 
 	return v;
+}
+
+void adcEsq(TRIE *a, TRIE *b) {
+	a->esq = b;
+}
+
+void adcDir(TRIE *a, TRIE *b) {
+	a->dir = b;
 }
 
 int getQtdOfTrie(TRIE *k) {
@@ -39,3 +46,11 @@ TRIE* getDirOfTrie(TRIE *k) {
 	return k->dir;
 }
 
+void imprimir(TRIE *k) {
+	if (k == NULL) return;
+
+	printf("C: %c\n", k->n.type);
+
+	imprimir(k->esq);
+	imprimir(k->dir);
+}
