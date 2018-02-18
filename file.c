@@ -22,15 +22,16 @@ void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 
 HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 	int i=1;
-	char c;
+	unsigned char c;
 	HEAP *a;
-	
-	while((c = fgetc(arq))!=EOF) {
+
+	while(c = fgetc(arq)) {
+		if (feof(arq)) break;
 		v = setQtd(v, c+1, getQtd(v, c+1) + 1);
 		(*cont)++;
 	}
 
-	heapsort(v,257);
+	heapsort(v,256);
 
 	while(getQtd(v, i)) i++;
 
@@ -178,53 +179,122 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 }
 
 int getBit(char* val, int* pos) {
-	int k = (*val & 64) >> 7;
+	int k = (*val & 128) >> 7;
 	*val = *val << 1;
 	(*pos)++;
 	return k;
 }
 
-void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie, char* name) {
-	char c;
+int tamBytes(FILE *arq, int tamanho) {
+	int aux = 0;
+	unsigned char tam[tamanho];
+
+	fread(tam, tamanho, 1, arq);
+
+	for (int i=0; i<tamanho; i++) aux = aux | (tam[i] << (8*((tamanho-1)-i)));
+	return aux;
+}
+
+void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
+	unsigned char c, aux = 0;
+	int pos = 0, cont = 0, bt = 8;
+	int ok = 0, pass = 1;
+
+	while((c = fgetc(arq)) != EOF) {
+		while (pos < 8) {
+			if (!ok && (c & (128>>(pos)))) {
+				aux = aux | (128>>(pos));
+				ok = 1;
+			}
+
+			if (!ok) {
+				if (++pos >= 8) {
+					s[len++] = aux;
+					break;
+				}
+			}
+			
+			if (ok) {
+				if (bt--) {
+					if (c & (128>>(pos))) aux = aux | (128>>(pos));
+					pos++;
+
+					if (pos >= 8) {
+						s[len++] = aux;
+						break;
+					}
+				} else {
+					ok = 0;
+					bt = 8;
+					cont++;
+					if (cont == tam) pass = 0;
+				}
+			}
+		}
+
+		if (!pass) break;
+		pos = 0;
+		aux = 0;
+	}
+
+	
+}
+
+void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
+	unsigned char c;
 	
 	if (arq) {
-		char val = 0;
+		unsigned char val = 0;
     	int pos = -1;
-	    long long qntCh = 0;
+	    int qntCh = 0;
 	    
 	    TRIE* aux = trie;
 	    
 		while((c = fgetc(arq)) != EOF) {
+			val = c;
+
 			while(pos < 7 && qntCh < totalCh) {
-				val = c;
-				int i = getBit(&val, &pos);
 				
+				int i = getBit(&val, &pos);
 				if (i == 1) aux = getDirOfTrie(aux);
 				else aux = getEsqOfTrie(aux);
 
 				if (getEsqOfTrie(aux) == NULL && getDirOfTrie(aux) == NULL)  {
-					char t = getTypeOfTrie(aux);
+					unsigned char t = getTypeOfTrie(aux);
 					fputc(t, dcpt);
 					aux = trie;
+					qntCh++;
+
 				}
 			}
+
+			if (qntCh == totalCh) break;
+			pos = -1;
 		}
 	}
 	
 }
 
-int tamStr(FILE *arq) {
-	int aux = 0;
-	unsigned char tam[4];
-
-	fread(tam, 4, 1, arq);
-
-	for (int i=0; i<4; i++) aux = aux | (tam[i] << (8*(3-i)));
-	return aux;
-}
-
 void descompacta(FILE *arq, FILE *dcpt) {
+	int pos = 0, tot = 0;
+	unsigned char s[28000];
+
+	int tamTrie = tamBytes(arq, 2);
+	bytesOfTrie(arq, s, 0, tamTrie);
 	
+	TRIE *k = recriar(k, s, &pos, &tot, tamTrie);
+
+	int tamStr = tamBytes(arq, 4);
+	decodeStr(arq, dcpt, tamStr, k);
+
+	if (!ferror(dcpt)) {
+		printf("\nArquivo descompactado com sucesso!\n\n");
+	} else {
+		printf("\nErro ao compactar.\n");
+		exit(1);
+	}
+
+	fclose(dcpt);
 }
 
 void organiza(HEAP *v) {
@@ -295,5 +365,5 @@ int main() {
 
 	}
 
-	printf("Obrigado por utilizar os nossos serviços, a equipe da Compactei agradece. =)\n");
+	printf("\nObrigado por utilizar os nossos serviços, a equipe da Compactei agradece. =)\n");
 }
