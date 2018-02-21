@@ -20,6 +20,7 @@ void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 	}
 }
 
+
 HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 	int i=1;
 	unsigned char c;
@@ -37,25 +38,25 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 
 	a = cria_heap();
 
-	for (int p=1; p<i; p++, (*j)++) insere(a, NULL, getType(v, p), getQtd(v, p));
+	for (int p=1; p<i; p++, (*j)++) {		
+		insere(a, NULL, getType(v, p), getQtd(v, p));
+	}
 
 	return a;
 }
 
-void codifica(TRIE *k, FILE *cpt, char str[256][256], char s[256], unsigned char *aux, int *tam, int len) {
+void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[256], unsigned char *aux, int *tam, int len) {
 	if (k == NULL) return;
 	if (getEsqOfTrie(k) == NULL && getDirOfTrie(k) == NULL) {
-		char c = getTypeOfTrie(k);
+		unsigned char c = getTypeOfTrie(k);
 
 		*aux = *aux | (128>>(*tam%8));
 		tamVerify(cpt, aux, tam);
 		for (int i=0; i<8; i++) {
-			int mark = c & (128>>i);
 			if (c & (128>>i)) *aux = (unsigned)(*aux | (128>>(*tam%8)));
-			
 			tamVerify(cpt, aux, tam);
 		}
-
+		
 		for (int i=0; i<len; i++) str[c][i] = s[i];
 		return;
 	}
@@ -75,14 +76,15 @@ void writeVal(char* val, int* pos, int bit) {
     }
 }
 
-void codeTable(FILE *arq, FILE *cpt, char s[256][256], char *name) {
-	char c;
+void codeTable(FILE *arq, FILE *cpt, unsigned char s[256][256], char *name) {
+	unsigned char c;
 	
 	if (cpt) {
-		char val = 0;
+		unsigned char val = 0;
     	int pos = -1;
 	    
-		while((c = fgetc(arq)) != EOF) {
+		while((c = fgetc(arq)) | 1) {
+			if (feof(arq)) break;
 			int i = 0;
 			
 			while(s[c][i] != '\0') {
@@ -135,8 +137,8 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	}
 	
 	TRIE *k = newTrie(t, j);
-
-	char str[256][256], s[256];
+	imprimir(k, 1);
+	unsigned char str[256][256], s[256];
 	rewind(arq);
 
 	FILE *cpt = fopen(name, "w+b");
@@ -152,17 +154,15 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 		aux = 1;
 		fwrite(&aux, 1, 1, cpt);
 		aux = 255;
-		fwrite(&aux, 1, 1, cpt);
+		fwrite(&aux, 1, 1, cpt);	
 	}
 
 	aux = 0;
 	codifica(k, cpt, str, s, &aux, &tam, 0);
-	fwrite(&aux, 1, 1, cpt);
-
-	for (int i = 3; i>=0; i--) {
-		aux = (cont & (0xFF << (8*i))) >> (8*i);
-		fwrite(&aux, 1, 1, cpt);
-	}
+ 	fwrite(&aux, 1, 1, cpt);
+ 	fwrite(&cont, sizeof(int), 1, cpt);
+	// 0000 0000 0000 0000 0000 0000 0010 1010;
+	// 0000 0000 0000 0000 0000 0000 1111 1111;
 
 	codeTable(arq, cpt, str, name);
 
@@ -199,12 +199,20 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
 	unsigned char c, aux = 0;
 	int pos = 0, cont = 0, bt = 8;
 	int ok = 0, pass = 1;
+	
 
-	while((c = fgetc(arq)) != EOF) {
-		while (pos < 8) {
+	while((c = fgetc(arq)) | 1) {
+		if (feof(arq)) {
+			break;
+		}
+		while (pass && pos < 8) {
 			if (!ok && (c & (128>>(pos)))) {
 				aux = aux | (128>>(pos));
 				ok = 1;
+				if (++pos >= 8) {
+					s[len++] = aux;
+					break;
+				}
 			}
 
 			if (!ok) {
@@ -227,16 +235,18 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
 					ok = 0;
 					bt = 8;
 					cont++;
-					if (cont == tam) pass = 0;
+					if (cont == tam) {
+						pass = 0;
+					}
 				}
 			}
 		}
 
 		if (!pass) break;
+		
 		pos = 0;
 		aux = 0;
 	}
-
 	
 }
 
@@ -246,11 +256,14 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 	if (arq) {
 		unsigned char val = 0;
     	int pos = -1;
-	    int qntCh = 0;
+	    long long qntCh = 0;
 	    
 	    TRIE* aux = trie;
 	    
-		while((c = fgetc(arq)) != EOF) {
+		while(1) {
+			c = fgetc(arq);
+			printf("C: %c %d %x | QT: %lld\n", c, c, c, qntCh);
+			if (feof(arq)) break;
 			val = c;
 
 			while(pos < 7 && qntCh < totalCh) {
@@ -258,8 +271,10 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 				int i = getBit(&val, &pos);
 				if (i == 1) aux = getDirOfTrie(aux);
 				else aux = getEsqOfTrie(aux);
+				printf("AUX C: %x %c | I: %d | POS: %d\n", getTypeOfTrie(aux), getTypeOfTrie(aux), i, pos);
 
 				if (getEsqOfTrie(aux) == NULL && getDirOfTrie(aux) == NULL)  {
+					printf("OLA\n");
 					unsigned char t = getTypeOfTrie(aux);
 					fputc(t, dcpt);
 					aux = trie;
@@ -281,10 +296,9 @@ void descompacta(FILE *arq, FILE *dcpt) {
 
 	int tamTrie = tamBytes(arq, 2);
 	bytesOfTrie(arq, s, 0, tamTrie);
-	
-	TRIE *k = recriar(k, s, &pos, &tot, tamTrie);
-
-	int tamStr = tamBytes(arq, 4);
+	int tamStr = 0;
+	fread(&tamStr, sizeof(int), 1, arq);
+	TRIE *k = recriar(k, s, &pos, &tot, strlen(s));
 	decodeStr(arq, dcpt, tamStr, k);
 
 	if (!ferror(dcpt)) {
@@ -315,7 +329,7 @@ int main() {
 			case 'C': {
 				char url[280000], name[280000];
 
-				scanf(" %s", url);
+				scanf("%s", url);
 
 				FILE *arq = fopen(url, "r+b");
 
@@ -329,6 +343,7 @@ int main() {
 					for (i=1; i<257; i++) v = insere(v, NULL, i-1, 0);
 
 					compacta(v, arq, name);
+					fclose(arq);
 				}
 				
 

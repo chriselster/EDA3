@@ -4,7 +4,7 @@
 #include "trie.h"
 
 struct node {
-	char type;
+	unsigned char type;
 	int qtd;
 };
 
@@ -13,7 +13,7 @@ struct trie {
 	TRIE *esq, *dir; 
 };
 
-TRIE* cria_trie(char type, int qtd) {
+TRIE* cria_trie(unsigned char type, int qtd) {
 	TRIE *v = malloc(sizeof(TRIE));
 
 	v->n.type = type;
@@ -35,7 +35,7 @@ int getQtdOfTrie(TRIE *k) {
 	return k->n.qtd;
 }
 
-char getTypeOfTrie(TRIE *k) {
+unsigned char getTypeOfTrie(TRIE *k) {
 	return k->n.type;
 }
 
@@ -47,54 +47,18 @@ TRIE* getDirOfTrie(TRIE *k) {
 	return k->dir;
 }
 
-void addchar(TRIE *raiz, char type) {
+void addchar(TRIE *raiz, unsigned char type) {
     raiz->n.type = type;
 }
 
-int bitabit(char *s, int a) {
+int bitabit(unsigned char *s, int a) {
     int i, j;
     i = a/8;
     j = a%8;
     return s[i]&(128>>j);
 }
 
-int readchar(char *s, long long a) {
-    int i, j, k, type;
-    i = a/8;
-    j = a%8;
-    for(k=j;k>=0;k--){
-        type += s[i]&(1<<k);
-    }
-    for(k=7;k>j;k--){
-        type += s[i-1]&(1<<k);
-    }
-    return type;
-}
-
-int recria(TRIE* raiz, char *s, long long i) {
-    if(!bitabit(s, i)){
-        i--;
-        i = recria(getEsqOfTrie(raiz), s, i);
-    }else{
-        i--;
-        addchar(raiz, readchar(s, i));
-        i-=7;
-        return i;
-    }
-    if(i>0){
-        i--;
-        i = recria(getDirOfTrie(raiz), s, i);
-    }
-    return i;
-}
-
-TRIE* recria_trie(char *s) {
-    TRIE *raiz = cria_trie(0, 0);
-    recria(raiz, s, strlen(s)*8);
-    return raiz;
-}
-
-TRIE* recriar(TRIE *k, char *s, int *pos, int *tot, int tam) {
+TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	if (*tot == tam) return NULL; 
 	k = cria_trie('0', 0);
 
@@ -110,17 +74,20 @@ TRIE* recriar(TRIE *k, char *s, int *pos, int *tot, int tam) {
 			(*pos)++;
 		}
 		(*tot)++;
+		
 		addchar(k, aux);
 	}
 
 	return k;
 }
 
-void imprimir(TRIE *k) {
+void imprimir(TRIE *k, int ind) {
 	if (k == NULL) return;
 
-	printf("C: %c\n", k->n.type);
+	if (k->esq == NULL && k->dir == NULL) printf("C: %c %x | FOLHA\n", k->n.type, k->n.type);
 
-	imprimir(k->esq);
-	imprimir(k->dir);
+	printf("ESQ C: %c | IND: %d\n", k->n.type, ind);
+	imprimir(k->esq, ind+1);
+	printf("DIR C: %c | IND: %d\n", k->n.type, ind);
+	imprimir(k->dir, ind+1);
 }
