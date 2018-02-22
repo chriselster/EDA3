@@ -4,7 +4,7 @@
 #include "trie.h"
 
 struct node {
-	char type;
+	unsigned char type;
 	int qtd;
 	TRIE *t;
 };
@@ -21,7 +21,7 @@ HEAP* cria_heap() {
 	return v;
 }
 
-HEAP* insere(HEAP *v, TRIE *t, char type, int qtd) {
+HEAP* insere(HEAP *v, TRIE *t, unsigned char type, int qtd) {
 	v->n[++v->tam].type = type;
 	v->n[v->tam].qtd = qtd;
 	v->n[v->tam].t = t;
@@ -82,7 +82,7 @@ int getQtd(HEAP *v, int pos) {
 	return v->n[pos].qtd;
 }
 
-char getType(HEAP *v, int pos) {
+unsigned char getType(HEAP *v, int pos) {
 	return v->n[pos].type;
 }
 
@@ -101,7 +101,7 @@ TRIE* remove_max(HEAP *v){
 	v->n[1]=v->n[v->tam--];
 	corrige_descendo(v,v->tam,1);
 	TRIE *t;
-	if (max.t == NULL) t = cria_trie(max.type, max.qtd, NULL, NULL);
+	if (max.t == NULL) t = cria_trie(max.type, max.qtd);
 	else t = max.t;
 	return t;
 }
