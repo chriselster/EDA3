@@ -1,7 +1,7 @@
 # Ao final da execução será criado um arquivo executável chamado "file"
 
 all: trie.o heap.o file.o 
-	gcc -g file.o heap.o trie.o -o file -Wall
+	gcc -g file.o heap.o trie.o -o file -Wall -Wextra -Werror -Wpedantic
 	rm -f *.o
 heap.o:
 	gcc -g -c heap.c

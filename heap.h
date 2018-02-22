@@ -16,6 +16,6 @@ unsigned char getType(HEAP *v, int pos);
 HEAP* setQtd(HEAP *v, int pos, int val);
 HEAP* atribui(HEAP *v, int i, HEAP *t, int j);
 TRIE* remove_max(HEAP *v);
-void imprima(HEAP *v);
+void deletarHeap(HEAP *h);
 
 #endif

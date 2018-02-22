@@ -16,8 +16,13 @@ struct heap {
 
 HEAP* cria_heap() {
 	HEAP *v = malloc(sizeof(HEAP));
+
+	if (v == NULL)
+		return v;
+
 	v->n = malloc(sizeof(Node)*257);
 	v->tam = 0;
+	
 	return v;
 }
 
@@ -25,13 +30,15 @@ HEAP* insere(HEAP *v, TRIE *t, unsigned char type, int qtd) {
 	v->n[++v->tam].type = type;
 	v->n[v->tam].qtd = qtd;
 	v->n[v->tam].t = t;
+
 	corrige_subindo(v, v->tam);
 	return v;
 }
 
 void constroi(HEAP *v, int n) {
 	int i;
-	for (i=n/2; i>=1; i--) {
+
+	for (i = n/2; i >= 1; i--) {
 		corrige_descendo(v, n, i);
 	}
 }
@@ -42,9 +49,11 @@ void corrige_descendo(HEAP *v, int n, int i) {
 	while (2*j <= n) {
 		int f = 2*j;
 
-		if (f < n && v->n[f].qtd > v->n[f+1].qtd) f++;
+		if (f < n && v->n[f].qtd > v->n[f+1].qtd) 
+			f++;
 
-		if (v->n[j].qtd <= v->n[f].qtd) break;
+		if (v->n[j].qtd <= v->n[f].qtd) 
+			break;
 		else {
 			Node temp = v->n[j];
 			v->n[j] = v->n[f];
@@ -101,11 +110,14 @@ TRIE* remove_max(HEAP *v){
 	v->n[1]=v->n[v->tam--];
 	corrige_descendo(v,v->tam,1);
 	TRIE *t;
-	if (max.t == NULL) t = cria_trie(max.type, max.qtd);
-	else t = max.t;
+	if (max.t == NULL) 
+		t = cria_trie(max.type, max.qtd);
+	else 
+		t = max.t;
 	return t;
 }
 
-void imprima(HEAP *v) {
-	for (int i=1; i<=v->tam; i++) printf("C: %c | QTD: %d\n", v->n[i].type, v->n[i].qtd);
+void deletarHeap(HEAP *h) {
+	free(h->n);
+	free(h);
 }

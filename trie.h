@@ -14,6 +14,6 @@ TRIE* getDirOfTrie(TRIE *k);
 void addchar(TRIE *raiz, unsigned char type);
 int bitabit(unsigned char *s, int a);
 TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam);
-void imprimir(TRIE *k, int ind);
+void deletarTrie(TRIE *k);
 
 #endif

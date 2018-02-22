@@ -6,8 +6,8 @@
 
 void help() {
 	printf("Comandos:\n");
-	printf("C NOMEDOARQUIVO.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
-	printf("D NOMEDOARQUIVO.bin NOVONOME.ext - Descompacta o arquivo NOMEDOARQUIVO.bin para o NOVONOME.ext.\n");
+	printf("C nomedoarq.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
+	printf("D nomedoarq.bin novonome.ext - Descompacta o arquivo NOMEDOARQUIVO.bin para o NOVONOME.ext.\n");
 	printf("H - Exibe os comandos disponíveis.\n");
 	printf("Q - Encerra o programa.\n\n");
 }
@@ -22,7 +22,7 @@ void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 
 
 HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
-	int i=1;
+	int i = 1, p;
 	unsigned char c;
 	HEAP *a;
 
@@ -37,8 +37,11 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 	while(getQtd(v, i)) i++;
 
 	a = cria_heap();
+	
+	if (a == NULL)
+		return a;
 
-	for (int p=1; p<i; p++, (*j)++) {		
+	for (p = 1; p < i; p++, (*j)++) {		
 		insere(a, NULL, getType(v, p), getQtd(v, p));
 	}
 
@@ -46,17 +49,25 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 }
 
 void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[256], unsigned char *aux, int *tam, int len) {
-	if (k == NULL) return;
+	if (k == NULL)
+		return;
+
 	if (getEsqOfTrie(k) == NULL && getDirOfTrie(k) == NULL) {
+		int i;
 		unsigned char c = getTypeOfTrie(k);
 		*aux = *aux | (128>>(*tam%8));
+		
 		tamVerify(cpt, aux, tam);
-		for (int i=0; i<8; i++) {
-			if (c & (128>>i)) *aux = (unsigned)(*aux | (128>>(*tam%8)));
+		
+		for (i = 0; i < 8; i++) {
+			if (c & (128>>i)) 
+				*aux = (unsigned) (*aux | (128>>(*tam%8)));
 			tamVerify(cpt, aux, tam);
 		}
 		
-		for (int i=0; i<len; i++) str[c][i] = s[i];
+		for (i = 0; i < len; i++) 
+			str[c][i] = s[i];
+
 		str[c][len] = '\0';
 		return;
 	}
@@ -96,7 +107,6 @@ void codeTable(FILE *arq, FILE *cpt, unsigned char s[256][256], char *name) {
 	    			pos = -1;
 					
 					writeVal(&val, &pos, s[c][i] - '0');
-
 				}
 				i++;
 			}
@@ -127,21 +137,29 @@ TRIE* newTrie(HEAP *t, int j) {
 }
 
 void compacta(HEAP *v, FILE *arq, char *name) {
-	int j=0, cont=0;
+	int j = 0, cont = 0;
 	char c;
 
 	printf("\nLendo caracteres...\n");
 
 	HEAP *t = lerArquivo(v, arq, &j, &cont);
 
+	if (t == NULL) {
+		printf("Erro - Heap nulo!");
+		return;
+	}
+
 	if (j == 0) {
 		printf("Erro - Arquivo vazio.\n");
 		return;
 	}
 
-	printf("Construindo a arvore atraves da tabela de frequência...\n");
+	printf("Construindo a arvore atraves da tabela de frequencia...\n");
 	
 	TRIE *k = newTrie(t, j);
+	if (k == NULL)
+		return;
+
 	unsigned char str[256][256], s[256];
 	rewind(arq);
 
@@ -179,6 +197,9 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	}
 
 	fclose(cpt);
+
+	deletarTrie(k);
+	deletarHeap(t);
 	
 	return;
 }
@@ -191,12 +212,14 @@ int getBit(char* val, int* pos) {
 }
 
 int tamBytes(FILE *arq, int tamanho) {
-	int aux = 0;
+	int aux = 0, i;
 	unsigned char tam[tamanho];
 
 	fread(tam, tamanho, 1, arq);
 
-	for (int i=0; i<tamanho; i++) aux = aux | (tam[i] << (8*((tamanho-1)-i)));
+	for (i = 0; i < tamanho; i++) 
+		aux = aux | (tam[i] << (8*((tamanho-1)-i)));
+
 	return aux;
 }
 
@@ -205,13 +228,11 @@ void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 	int pos = 0, cont = 0, bt = 8;
 	int ok = 0, pass = 1;
 	
-
 	while((c = fgetc(arq)) | 1) {
-		if (feof(arq)) {
+		if (feof(arq))
 			break;
-		}
-		while (pass && pos < 8) {
 
+		while (pass && pos < 8) {
 			if (!ok && (c & (128>>(pos)))) {
 				aux = aux | (128>>(pos));
 				ok = 1;
@@ -256,7 +277,6 @@ void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 		pos = 0;
 		aux = 0;
 	}
-	
 }
 
 void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
@@ -271,8 +291,9 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 	    
 		while(1) {
 			c = fgetc(arq);
-			if (feof(arq)) break;
 			val = c;
+			if (feof(arq)) break;
+			if (qntCh == totalCh) break;
 
 			while(pos < 7 && qntCh < totalCh) {
 				int i = getBit(&val, &pos);
@@ -281,20 +302,17 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 				else aux = getEsqOfTrie(aux);
 				
 				if (getEsqOfTrie(aux) == NULL && getDirOfTrie(aux) == NULL)  {
-
 					unsigned char t = getTypeOfTrie(aux);
 					fputc(t, dcpt);
+					
 					aux = trie;
 					qntCh++;
-
 				}
 			}
 
-			if (qntCh == totalCh) break;
 			pos = -1;
 		}
 	}
-	
 }
 
 void descompacta(FILE *arq, FILE *dcpt) {
@@ -309,7 +327,14 @@ void descompacta(FILE *arq, FILE *dcpt) {
 	int tamStr = 0;
 	fread(&tamStr, sizeof(int), 1, arq);
 	printf("Recriando a arvore...\n");
+	
 	TRIE *k = recriar(k, s, &pos, &tot, len);
+	
+	if (k == NULL) {
+		printf("Erro - Trie nula!\n");
+		return;
+	}
+
 	printf("Decodificando o texto...\n");
 	decodeStr(arq, dcpt, tamStr, k);
 
@@ -321,6 +346,10 @@ void descompacta(FILE *arq, FILE *dcpt) {
 	}
 
 	fclose(dcpt);
+
+	deletarTrie(k);
+
+	return;
 }
 
 void organiza(HEAP *v) {
@@ -331,16 +360,16 @@ int main() {
 	int i;
 	char act;
 	
-	printf("Compactei v1.0 \n\n");
+	printf("Compactei v1.0\n\n");
 	
 	help();
 
 	while (scanf(" %c", &act)) {
-		if (act == 'Q') break;
+		if (act == 'Q') 
+			break;
 		switch (act) {
 			case 'C': {
 				char url[280000], name[280000];
-
 				scanf("%s", url);
 
 				FILE *arq = fopen(url, "r+b");
@@ -352,16 +381,14 @@ int main() {
 					strcat(name, ".bin");
 
 					HEAP *v = cria_heap();
-					for (i=1; i<257; i++) v = insere(v, NULL, i-1, 0);
+					for (i = 1; i < 257; i++) 
+						v = insere(v, NULL, i-1, 0);
 
 					compacta(v, arq, name);
 					fclose(arq);
 				}
-				
-
 				break;
 			}
-
 			case 'D': {
 				char url[280000], name[280000];
 				scanf(" %s %s", url, name);
@@ -374,23 +401,20 @@ int main() {
 				} else {
 					descompacta(arq, dcpt);
 				}
-
 				break;
 			}
-
 			case 'H': {
 				printf("\n");
 				help();
 				break;
 			}
-
 			default: {
-				printf("Erro - Comando não encontrado.\n\n");
+				printf("Erro - Comando nao encontrado.\n\n");
 				break;
 			}
 		}
 
 	}
 
-	printf("\nObrigado por utilizar os nossos serviços, a equipe da Compactei agradece. =)\n");
+	printf("\nObrigado por utilizar os nossos servicos, a equipe da Compactei agradece. =)\n");
 }

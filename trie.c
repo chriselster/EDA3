@@ -16,6 +16,9 @@ struct trie {
 TRIE* cria_trie(unsigned char type, int qtd) {
 	TRIE *v = malloc(sizeof(TRIE));
 
+	if (v == NULL)
+		return v;
+
 	v->n.type = type;
 	v->n.qtd = qtd;
 	v->esq = v->dir = NULL;
@@ -62,13 +65,18 @@ TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	if (*tot == tam) return NULL; 
 	k = cria_trie('0', 0);
 
+	if (k == NULL) {
+		return k;
+	}
+
 	if (!bitabit(s, (*pos)++)) {
 		k->esq = recriar(getEsqOfTrie(k), s, pos, tot, tam);
 		k->dir = recriar(getDirOfTrie(k), s, pos, tot, tam);
 	} else {
 		unsigned char aux = 0;
+		int i;
 
-		for (int i=0; i<8; i++) {
+		for (i = 0; i < 8; i++) {
 			int bit = bitabit(s, *pos);
 			if (bit) aux = aux | (128>>i);
 			(*pos)++;
@@ -81,13 +89,13 @@ TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	return k;
 }
 
-void imprimir(TRIE *k, int ind) {
-	if (k == NULL) return;
+void deletarTrie(TRIE *k) {
+	if (getEsqOfTrie(k) != NULL)
+		deletarTrie(getEsqOfTrie(k));
+	
+	if (getDirOfTrie(k) != NULL)
+		deletarTrie(getDirOfTrie(k));
 
-	if (k->esq == NULL && k->dir == NULL) printf("C: %c %x | FOLHA\n", k->n.type, k->n.type);
-
-	printf("ESQ C: %c | IND: %d\n", k->n.type, ind);
-	imprimir(k->esq, ind+1);
-	printf("DIR C: %c | IND: %d\n", k->n.type, ind);
-	imprimir(k->dir, ind+1);
+	if (k != NULL)
+		free(k);
 }
