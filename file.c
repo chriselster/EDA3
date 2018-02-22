@@ -7,7 +7,7 @@
 void help() {
 	printf("Comandos:\n");
 	printf("C NOMEDOARQUIVO.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
-	printf("D NOMEDOARQUIVO.cpt NOVONOME.ext - Descompacta o arquivo NOMEDOARQUIVO.cpt para o NOVONOME.ext.\n");
+	printf("D NOMEDOARQUIVO.bin NOVONOME.ext - Descompacta o arquivo NOMEDOARQUIVO.bin para o NOVONOME.ext.\n");
 	printf("H - Exibe os comandos disponíveis.\n");
 	printf("Q - Encerra o programa.\n\n");
 }
@@ -49,7 +49,6 @@ void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[2
 	if (k == NULL) return;
 	if (getEsqOfTrie(k) == NULL && getDirOfTrie(k) == NULL) {
 		unsigned char c = getTypeOfTrie(k);
-
 		*aux = *aux | (128>>(*tam%8));
 		tamVerify(cpt, aux, tam);
 		for (int i=0; i<8; i++) {
@@ -58,6 +57,7 @@ void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[2
 		}
 		
 		for (int i=0; i<len; i++) str[c][i] = s[i];
+		str[c][len] = '\0';
 		return;
 	}
 
@@ -88,14 +88,15 @@ void codeTable(FILE *arq, FILE *cpt, unsigned char s[256][256], char *name) {
 			int i = 0;
 			
 			while(s[c][i] != '\0') {
-				if (pos < 7)
+				if (pos < 7) {
 					writeVal(&val, &pos, s[c][i] - '0');
-				else {
+				} else {
 					fputc(val, cpt);
 					val = 0;
 	    			pos = -1;
 					
 					writeVal(&val, &pos, s[c][i] - '0');
+
 				}
 				i++;
 			}
@@ -129,15 +130,18 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	int j=0, cont=0;
 	char c;
 
+	printf("\nLendo caracteres...\n");
+
 	HEAP *t = lerArquivo(v, arq, &j, &cont);
 
 	if (j == 0) {
 		printf("Erro - Arquivo vazio.\n");
 		return;
 	}
+
+	printf("Construindo a arvore atraves da tabela de frequência...\n");
 	
 	TRIE *k = newTrie(t, j);
-	imprimir(k, 1);
 	unsigned char str[256][256], s[256];
 	rewind(arq);
 
@@ -158,16 +162,17 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	}
 
 	aux = 0;
+	printf("Codificando a arvore...\n");
 	codifica(k, cpt, str, s, &aux, &tam, 0);
- 	fwrite(&aux, 1, 1, cpt);
- 	fwrite(&cont, sizeof(int), 1, cpt);
-	// 0000 0000 0000 0000 0000 0000 0010 1010;
-	// 0000 0000 0000 0000 0000 0000 1111 1111;
+	fwrite(&aux, 1, 1, cpt);
 
+ 	fwrite(&cont, sizeof(int), 1, cpt);
+
+ 	printf("Codificando o texto...\n");
 	codeTable(arq, cpt, str, name);
 
 	if (!ferror(cpt)) {
-		printf("\nArquivo compactado com sucesso!\nPara descompactar o arquivo, digite D %s.\n\n", name);
+		printf("\nArquivo compactado com sucesso!\nPara descompactar o arquivo, digite D %s NOMEDOARQUIVO.ext.\n\n", name);
 	} else {
 		printf("\nErro ao compactar.\n");
 		exit(1);
@@ -195,7 +200,7 @@ int tamBytes(FILE *arq, int tamanho) {
 	return aux;
 }
 
-void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
+void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 	unsigned char c, aux = 0;
 	int pos = 0, cont = 0, bt = 8;
 	int ok = 0, pass = 1;
@@ -206,18 +211,19 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
 			break;
 		}
 		while (pass && pos < 8) {
+
 			if (!ok && (c & (128>>(pos)))) {
 				aux = aux | (128>>(pos));
 				ok = 1;
 				if (++pos >= 8) {
-					s[len++] = aux;
+					s[(*len)++] = aux;
 					break;
 				}
 			}
 
 			if (!ok) {
 				if (++pos >= 8) {
-					s[len++] = aux;
+					s[(*len)++] = aux;
 					break;
 				}
 			}
@@ -228,7 +234,7 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
 					pos++;
 
 					if (pos >= 8) {
-						s[len++] = aux;
+						s[(*len)++] = aux;
 						break;
 					}
 				} else {
@@ -242,7 +248,10 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int len, int tam) {
 			}
 		}
 
-		if (!pass) break;
+		if (!pass) {
+			s[(*len)] = aux;
+			break;
+		}
 		
 		pos = 0;
 		aux = 0;
@@ -262,19 +271,17 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 	    
 		while(1) {
 			c = fgetc(arq);
-			printf("C: %c %d %x | QT: %lld\n", c, c, c, qntCh);
 			if (feof(arq)) break;
 			val = c;
 
 			while(pos < 7 && qntCh < totalCh) {
-				
 				int i = getBit(&val, &pos);
+
 				if (i == 1) aux = getDirOfTrie(aux);
 				else aux = getEsqOfTrie(aux);
-				printf("AUX C: %x %c | I: %d | POS: %d\n", getTypeOfTrie(aux), getTypeOfTrie(aux), i, pos);
-
+				
 				if (getEsqOfTrie(aux) == NULL && getDirOfTrie(aux) == NULL)  {
-					printf("OLA\n");
+
 					unsigned char t = getTypeOfTrie(aux);
 					fputc(t, dcpt);
 					aux = trie;
@@ -295,10 +302,15 @@ void descompacta(FILE *arq, FILE *dcpt) {
 	unsigned char s[28000];
 
 	int tamTrie = tamBytes(arq, 2);
-	bytesOfTrie(arq, s, 0, tamTrie);
+	int len = 0;
+	printf("\nDecodificando a arvore...\n");
+	bytesOfTrie(arq, s, &len, tamTrie);
+
 	int tamStr = 0;
 	fread(&tamStr, sizeof(int), 1, arq);
-	TRIE *k = recriar(k, s, &pos, &tot, strlen(s));
+	printf("Recriando a arvore...\n");
+	TRIE *k = recriar(k, s, &pos, &tot, len);
+	printf("Decodificando o texto...\n");
 	decodeStr(arq, dcpt, tamStr, k);
 
 	if (!ferror(dcpt)) {
@@ -355,7 +367,7 @@ int main() {
 				scanf(" %s %s", url, name);
 
 				FILE *arq = fopen(url, "r+b");
-				FILE *dcpt = fopen(name, "w+b");
+				FILE *dcpt = fopen(name, "w");
 
 				if (!arq) {
 					printf("Erro ao acessar arquivo.\n");
