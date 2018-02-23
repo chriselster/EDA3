@@ -16,7 +16,6 @@ char* readstr(char* str, size_t size, size_t tam){
 	char ch;
 	str = realloc(NULL, sizeof(char)*size);
     if(!str)return str;
-    ch = fgetc(stdin);
     
     while(EOF!=(ch=fgetc(stdin)) && (ch != '\n' && ch != ' ')){
         str[tam++]=ch;
@@ -61,13 +60,11 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 
 	a = cria_heap();
 	
-	if (a == NULL)
-		return a;
+	if (a == NULL) return a;
 
-	for (p = 1; p < i; p++, (*j)++) {		
+	for (p = 1; p < i; p++, (*j)++) 
 		insere(a, NULL, getType(v, p), getQtd(v, p));
-	}
-
+	
 	return a;
 }
 
@@ -390,16 +387,19 @@ int main() {
 
 		switch (act) {
 			case 'C': {
-				char *url;
+				char c, *url, *name;
+				c = fgetc(stdin);
 				url = readstr(url, 10, 0);
-				char *name = malloc(sizeof(char)*strlen(url));
+				name = malloc(sizeof(char)*strlen(url));
 
 				FILE *arq = fopen(url, "r+b");
 
 				if (!arq) {
 					printf("\nErro ao acessar arquivo.\n\n");
 				} else {
-					strncpy(name, url, strlen(url)-4);
+					int i = 0;
+					while (url[i] != '.') i++;
+					strncpy(name, url, i);
 					strcat(name, ".bin");
 
 					HEAP *v = cria_heap();
@@ -415,7 +415,8 @@ int main() {
 			}
 
 			case 'D': {
-				char *url, *name;
+				char c, *url, *name;
+				c = fgetc(stdin);
 				url = readstr(url, 10, 0);
 				name = readstr(name, 10, 0);
 
