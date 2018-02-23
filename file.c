@@ -12,6 +12,29 @@ void help() {
 	printf("Q - Encerra o programa.\n\n");
 }
 
+char* readstr(char* str, size_t size, size_t tam){
+	char ch;
+	str = realloc(NULL, sizeof(char)*size);
+    if(!str)return str;
+    ch = fgetc(stdin);
+    
+    while(EOF!=(ch=fgetc(stdin)) && (ch != '\n' && ch != ' ')){
+        str[tam++]=ch;
+        if(tam==size){
+            str = realloc(str, sizeof(char)*(size+=16));
+            if(!str)return str;
+        }
+    }
+    str[tam++]='\0';
+    
+    return realloc(str, sizeof(char)*tam);
+}
+
+void concatChar(unsigned char *s, unsigned char aux, int *len) {
+	s = realloc(s, sizeof(char)*(*len+1));
+	s[(*len)++] = aux;
+}
+
 void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 	(*tam)++;
 	if (*tam%8 == 0) {
@@ -138,27 +161,30 @@ TRIE* newTrie(HEAP *t, int j) {
 
 void compacta(HEAP *v, FILE *arq, char *name) {
 	int j = 0, cont = 0;
-	char c;
 
 	printf("\nLendo caracteres...\n");
 
 	HEAP *t = lerArquivo(v, arq, &j, &cont);
 
 	if (t == NULL) {
-		printf("Erro - Heap nulo!");
-		return;
+		printf("\nErro - Heap nulo.\n");
+		exit(1);
 	}
 
 	if (j == 0) {
-		printf("Erro - Arquivo vazio.\n");
-		return;
+		printf("\nErro - Arquivo vazio.\n");
+		exit(1);
 	}
 
 	printf("Construindo a arvore atraves da tabela de frequencia...\n");
 	
 	TRIE *k = newTrie(t, j);
-	if (k == NULL)
-		return;
+
+	if (k == NULL) {
+		printf("\nErro - Trie nula.\n");
+		exit(1);
+	}
+		
 
 	unsigned char str[256][256], s[256];
 	rewind(arq);
@@ -196,8 +222,8 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 		exit(1);
 	}
 
+	fclose(arq);
 	fclose(cpt);
-
 	deletarTrie(k);
 	deletarHeap(t);
 	
@@ -223,7 +249,7 @@ int tamBytes(FILE *arq, int tamanho) {
 	return aux;
 }
 
-void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
+void bytesOfTrie(FILE *arq, unsigned char *s, int *len, int tam) {
 	unsigned char c, aux = 0;
 	int pos = 0, cont = 0, bt = 8;
 	int ok = 0, pass = 1;
@@ -237,14 +263,14 @@ void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 				aux = aux | (128>>(pos));
 				ok = 1;
 				if (++pos >= 8) {
-					s[(*len)++] = aux;
+					concatChar(s, aux, len);
 					break;
 				}
 			}
 
 			if (!ok) {
 				if (++pos >= 8) {
-					s[(*len)++] = aux;
+					concatChar(s, aux, len);
 					break;
 				}
 			}
@@ -255,7 +281,7 @@ void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 					pos++;
 
 					if (pos >= 8) {
-						s[(*len)++] = aux;
+						concatChar(s, aux, len);
 						break;
 					}
 				} else {
@@ -270,7 +296,8 @@ void bytesOfTrie(FILE *arq, unsigned char s[28000], int *len, int tam) {
 		}
 
 		if (!pass) {
-			s[(*len)] = aux;
+			concatChar(s, aux, len);
+			(*len)--;
 			break;
 		}
 		
@@ -316,23 +343,21 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 }
 
 void descompacta(FILE *arq, FILE *dcpt) {
-	int pos = 0, tot = 0;
-	unsigned char s[28000];
+	int len = 0, pos = 0, tot = 0, tamStr = 0;
+	unsigned char *s = malloc(sizeof(char)*0);
 
 	int tamTrie = tamBytes(arq, 2);
-	int len = 0;
 	printf("\nDecodificando a arvore...\n");
 	bytesOfTrie(arq, s, &len, tamTrie);
 
-	int tamStr = 0;
 	fread(&tamStr, sizeof(int), 1, arq);
 	printf("Recriando a arvore...\n");
 	
 	TRIE *k = recriar(k, s, &pos, &tot, len);
 	
 	if (k == NULL) {
-		printf("Erro - Trie nula!\n");
-		return;
+		printf("\nErro - Trie nula.\n\n");
+		exit(1);
 	}
 
 	printf("Decodificando o texto...\n");
@@ -345,15 +370,11 @@ void descompacta(FILE *arq, FILE *dcpt) {
 		exit(1);
 	}
 
+	fclose(arq);
 	fclose(dcpt);
-
 	deletarTrie(k);
 
 	return;
-}
-
-void organiza(HEAP *v) {
-	int tam = 0;
 }
 
 int main() {
@@ -365,17 +386,18 @@ int main() {
 	help();
 
 	while (scanf(" %c", &act)) {
-		if (act == 'Q') 
-			break;
+		if (act == 'Q') break;
+
 		switch (act) {
 			case 'C': {
-				char url[280000], name[280000];
-				scanf("%s", url);
+				char *url;
+				url = readstr(url, 10, 0);
+				char *name = malloc(sizeof(char)*strlen(url));
 
 				FILE *arq = fopen(url, "r+b");
 
 				if (!arq) {
-					printf("Erro ao acessar arquivo.\n");
+					printf("\nErro ao acessar arquivo.\n\n");
 				} else {
 					strncpy(name, url, strlen(url)-4);
 					strcat(name, ".bin");
@@ -385,31 +407,35 @@ int main() {
 						v = insere(v, NULL, i-1, 0);
 
 					compacta(v, arq, name);
-					fclose(arq);
 				}
+
+				free(url);				
+
 				break;
 			}
+
 			case 'D': {
-				char url[280000], name[280000];
-				scanf(" %s %s", url, name);
+				char *url, *name;
+				url = readstr(url, 10, 0);
+				name = readstr(name, 10, 0);
 
 				FILE *arq = fopen(url, "r+b");
 				FILE *dcpt = fopen(name, "w");
 
-				if (!arq) {
-					printf("Erro ao acessar arquivo.\n");
-				} else {
-					descompacta(arq, dcpt);
-				}
+				if (!arq) printf("\nErro ao acessar arquivo.\n\n");
+				else descompacta(arq, dcpt);
+
 				break;
 			}
+
 			case 'H': {
 				printf("\n");
 				help();
 				break;
 			}
+
 			default: {
-				printf("Erro - Comando nao encontrado.\n\n");
+				printf("\nErro - Comando nao encontrado.\n\n");
 				break;
 			}
 		}

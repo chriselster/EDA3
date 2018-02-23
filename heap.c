@@ -17,8 +17,7 @@ struct heap {
 HEAP* cria_heap() {
 	HEAP *v = malloc(sizeof(HEAP));
 
-	if (v == NULL)
-		return v;
+	if (v == NULL) return v;
 
 	v->n = malloc(sizeof(Node)*257);
 	v->tam = 0;
@@ -109,11 +108,14 @@ TRIE* remove_max(HEAP *v){
 	Node max = v->n[1];
 	v->n[1]=v->n[v->tam--];
 	corrige_descendo(v,v->tam,1);
+
 	TRIE *t;
+	
 	if (max.t == NULL) 
 		t = cria_trie(max.type, max.qtd);
 	else 
 		t = max.t;
+
 	return t;
 }
 

@@ -16,8 +16,7 @@ struct trie {
 TRIE* cria_trie(unsigned char type, int qtd) {
 	TRIE *v = malloc(sizeof(TRIE));
 
-	if (v == NULL)
-		return v;
+	if (v == NULL) return v;
 
 	v->n.type = type;
 	v->n.qtd = qtd;
@@ -65,9 +64,7 @@ TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	if (*tot == tam) return NULL; 
 	k = cria_trie('0', 0);
 
-	if (k == NULL) {
-		return k;
-	}
+	if (k == NULL) return k;
 
 	if (!bitabit(s, (*pos)++)) {
 		k->esq = recriar(getEsqOfTrie(k), s, pos, tot, tam);
