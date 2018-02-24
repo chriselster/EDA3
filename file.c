@@ -386,6 +386,7 @@ void descompacta(FILE *arq, FILE *dcpt) {
 	fclose(arq);
 	fclose(dcpt);
 	deletarTrie(k);
+	free(s);
 
 	return;
 }
@@ -425,7 +426,8 @@ int main() {
 
 					compacta(v, arq, name);
 				}
-
+				
+				free(name);
 				free(url);				
 
 				break;
