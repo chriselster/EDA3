@@ -13,6 +13,7 @@ struct trie {
 	TRIE *esq, *dir; 
 };
 
+// Aloca um espaco de memoria para a arvore do algoritmo de huffman
 TRIE* cria_trie(unsigned char type, int qtd) {
 	TRIE *v = malloc(sizeof(TRIE));
 
@@ -60,6 +61,7 @@ int bitabit(unsigned char *s, int a) {
     return s[i]&(128>>j);
 }
 
+// Recria a arvore a partir do arquivo compactado
 TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	if (*tot == tam) return NULL; 
 	k = cria_trie('0', 0);
@@ -86,6 +88,7 @@ TRIE* recriar(TRIE *k, unsigned char *s, int *pos, int *tot, int tam) {
 	return k;
 }
 
+// Deleta a arvore inteira
 void deletarTrie(TRIE *k) {
 	if (getEsqOfTrie(k) != NULL)
 		deletarTrie(getEsqOfTrie(k));

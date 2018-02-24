@@ -4,6 +4,7 @@
 #include "heap.h"
 #include "trie.h"
 
+// Funcao para comando H que imprime todos os outros disponiveis
 void help() {
 	printf("Comandos:\n");
 	printf("C nomedoarq.ext - Compacta o arquivo NOMEDOARQUIVO.ext.\n");
@@ -12,6 +13,7 @@ void help() {
 	printf("Q - Encerra o programa.\n\n");
 }
 
+// Permite a leitura de uma string com tamanho qualquer
 char* readstr(char* str, size_t size, size_t tam){
 	char ch;
 	str = realloc(NULL, sizeof(char)*size);
@@ -29,11 +31,13 @@ char* readstr(char* str, size_t size, size_t tam){
     return realloc(str, sizeof(char)*tam);
 }
 
+// Concatena duas strings
 void concatChar(unsigned char *s, unsigned char aux, int *len) {
 	s = realloc(s, sizeof(char)*(*len+1));
 	s[(*len)++] = aux;
 }
 
+// Verifica se está completo os 8 bits, se sim, escreve aux no arquivo arq
 void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 	(*tam)++;
 	if (*tam%8 == 0) {
@@ -42,7 +46,7 @@ void tamVerify(FILE *arq, unsigned char *aux, int *tam) {
 	}
 }
 
-
+// Processa o arquivo e cria um heap maximo baseado na frequencia dos caracteres
 HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 	int i = 1, p;
 	unsigned char c;
@@ -68,6 +72,7 @@ HEAP* lerArquivo(HEAP *v, FILE *arq, int *j, int *cont) {
 	return a;
 }
 
+// Realizara a codificacao do texto em sequencia de 0 e 1 pela arvore ja existente
 void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[256], unsigned char *aux, int *tam, int len) {
 	if (k == NULL)
 		return;
@@ -100,6 +105,7 @@ void codifica(TRIE *k, FILE *cpt, unsigned char str[256][256], unsigned char s[2
 	codifica(getDirOfTrie(k), cpt, str, s, aux, tam, len+1);
 }
 
+// Manipula bit a bit um char para escrever no arquivo de byte em byte
 void writeVal(char* val, int* pos, int bit) {
     (*pos)++;
     if (bit == 1) {
@@ -107,6 +113,7 @@ void writeVal(char* val, int* pos, int bit) {
     }
 }
 
+// Escreve bit a bit a sequencia gerada pela arvore do algoritmo de huffman para cada caractere
 void codeTable(FILE *arq, FILE *cpt, unsigned char s[256][256], char *name) {
 	unsigned char c;
 	
@@ -137,6 +144,7 @@ void codeTable(FILE *arq, FILE *cpt, unsigned char s[256][256], char *name) {
 
 }
 
+// Cria uma arvore de huffman com base no heap maximo criado
 TRIE* newTrie(HEAP *t, int j) {
 	TRIE *a, *b, *k;
 	if (j == 1) {
@@ -156,6 +164,8 @@ TRIE* newTrie(HEAP *t, int j) {
 	return k;
 }
 
+// Comanda a compactacao do texto, criando um heap-maximo, uma trie baseado no algoritmo de huffman
+// Em seguida escreve a arvore e o texto compactado no arquivo binario
 void compacta(HEAP *v, FILE *arq, char *name) {
 	int j = 0, cont = 0;
 
@@ -227,6 +237,7 @@ void compacta(HEAP *v, FILE *arq, char *name) {
 	return;
 }
 
+// Retorna o bit mais significativo do char val (mais à esquerda)
 int getBit(char* val, int* pos) {
 	int k = (*val & 128) >> 7;
 	*val = *val << 1;
@@ -234,6 +245,7 @@ int getBit(char* val, int* pos) {
 	return k;
 }
 
+// Processa (ler) tamanho quantidade de bytes do arquivo arq
 int tamBytes(FILE *arq, int tamanho) {
 	int aux = 0, i;
 	unsigned char tam[tamanho];
@@ -246,6 +258,7 @@ int tamBytes(FILE *arq, int tamanho) {
 	return aux;
 }
 
+// Retorna a quantidade de caracteres da arvore
 void bytesOfTrie(FILE *arq, unsigned char *s, int *len, int tam) {
 	unsigned char c, aux = 0;
 	int pos = 0, cont = 0, bt = 8;
@@ -303,6 +316,7 @@ void bytesOfTrie(FILE *arq, unsigned char *s, int *len, int tam) {
 	}
 }
 
+// Processa a parte do arquivo compactador referente ao texto original e reescreve-o no novo arquivo
 void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 	unsigned char c;
 	
@@ -339,6 +353,8 @@ void decodeStr(FILE *arq, FILE *dcpt, long long totalCh, TRIE* trie) {
 	}
 }
 
+// Comanda o processo de descompactar o arquivo binario, decodificando a arvore e a sequencia de 0 e 1
+// do texto original
 void descompacta(FILE *arq, FILE *dcpt) {
 	int len = 0, pos = 0, tot = 0, tamStr = 0;
 	unsigned char *s = malloc(sizeof(char)*0);
@@ -387,6 +403,7 @@ int main() {
 
 		switch (act) {
 			case 'C': {
+				// Cria-se um arquivo de mesmo nome com extensao .bin e sera o compactado
 				char c, *url, *name;
 				c = fgetc(stdin);
 				url = readstr(url, 10, 0);

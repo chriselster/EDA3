@@ -14,6 +14,7 @@ struct heap {
 	Node *n;	
 };
 
+// Aloca um espaco de memoria para o heap maximo
 HEAP* cria_heap() {
 	HEAP *v = malloc(sizeof(HEAP));
 
@@ -25,6 +26,7 @@ HEAP* cria_heap() {
 	return v;
 }
 
+// Insere um elemento no heap e corrige-o
 HEAP* insere(HEAP *v, TRIE *t, unsigned char type, int qtd) {
 	v->n[++v->tam].type = type;
 	v->n[v->tam].qtd = qtd;
@@ -34,6 +36,7 @@ HEAP* insere(HEAP *v, TRIE *t, unsigned char type, int qtd) {
 	return v;
 }
 
+// Recebe uma struct HEAP e a corrige, tornando-a um heap maximo de verdade
 void constroi(HEAP *v, int n) {
 	int i;
 
@@ -42,6 +45,7 @@ void constroi(HEAP *v, int n) {
 	}
 }
 
+// Garante a propriedade de um heap maximo "descendo" a partir de um elemento
 void corrige_descendo(HEAP *v, int n, int i) {
 	int j = i;
 
@@ -62,6 +66,7 @@ void corrige_descendo(HEAP *v, int n, int i) {
 	}
 }
 
+// Garante a propriedade de um heap maximo "subindo" a partir de um elemento
 void corrige_subindo(HEAP *v, int m) {
 	int i = m;
 
@@ -73,6 +78,7 @@ void corrige_subindo(HEAP *v, int m) {
 	}
 }
 
+// Ordena o vetor do heap
 void heapsort(HEAP *v, int n) {
 	constroi(v, n);
 	int k = n;
@@ -104,6 +110,7 @@ HEAP* atribui(HEAP *v, int i, HEAP *t, int j) {
 	return v;
 }
 
+// Remove o maximo do heap
 TRIE* remove_max(HEAP *v){
 	Node max = v->n[1];
 	v->n[1]=v->n[v->tam--];
@@ -119,6 +126,7 @@ TRIE* remove_max(HEAP *v){
 	return t;
 }
 
+// Deleta o heap todo
 void deletarHeap(HEAP *h) {
 	free(h->n);
 	free(h);
